@@ -99,15 +99,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Plan state: array of marker ids in order
   const planOrder = [];
+  // Track active tab to decide which icon mode to use
+  let activeTab = 'markers';
 
   function setActiveTab(which) {
     const isPlan = which === 'plan';
+    activeTab = isPlan ? 'plan' : 'markers';
     tabMarkers && tabMarkers.classList.toggle('active', !isPlan);
     tabPlan && tabPlan.classList.toggle('active', isPlan);
     markersView && markersView.classList.toggle('hidden', isPlan);
     planView && planView.classList.toggle('hidden', !isPlan);
     // Show/hide filter only on Markers tab
     typeFilterEl && typeFilterEl.classList.toggle('hidden', isPlan);
+    // Swap marker icons depending on active tab
+    updateIconsForActiveTab();
   }
 
   tabMarkers && tabMarkers.addEventListener('click', () => setActiveTab('markers'));
@@ -189,7 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!markersState.has(id)) return;
     if (!planOrder.includes(id)) {
       planOrder.push(id);
-      updateNumberedIcons();
+  updateIconsForActiveTab();
       renderPlan();
       showMessage('Added to plan');
     } else {
@@ -201,7 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const idx = planOrder.indexOf(id);
     if (idx !== -1) {
       planOrder.splice(idx, 1);
-      updateNumberedIcons();
+  updateIconsForActiveTab();
       renderPlan();
       showMessage('Removed from plan');
     }
@@ -262,7 +267,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tmp = planOrder[i];
     planOrder[i] = planOrder[j];
     planOrder[j] = tmp;
-    updateNumberedIcons();
+  updateIconsForActiveTab();
     renderPlan();
   }
 
@@ -287,7 +292,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (from === -1 || to === -1) return;
         planOrder.splice(to, 0, planOrder.splice(from, 1)[0]);
         renderPlan();
-        updateNumberedIcons();
+  updateIconsForActiveTab();
       });
     });
   }
@@ -326,7 +331,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   exportPlanBtn && exportPlanBtn.addEventListener('click', exportPlan);
   clearPlanBtn && clearPlanBtn.addEventListener('click', () => {
     planOrder.splice(0, planOrder.length);
-    updateNumberedIcons();
+  updateIconsForActiveTab();
     renderPlan();
   });
 
@@ -371,7 +376,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       return match ? match.id : null;
     }).filter(Boolean));
 
-    updateNumberedIcons();
+  updateIconsForActiveTab();
     renderPlan();
     showMessage(`Imported plan with ${planOrder.length} item(s)`);
   }
@@ -418,6 +423,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         s.marker.setIcon(getIconForType(s.type));
       }
     });
+  }
+
+  // Update all marker icons to reflect current tab: type icons on Markers tab, numbers on Plan tab
+  function updateIconsForActiveTab() {
+    if (activeTab === 'plan') {
+      updateNumberedIcons();
+    } else {
+      markersState.forEach((s) => s.marker.setIcon(getIconForType(s.type)));
+    }
   }
 
   function setMarkerPopup(m, state) {
@@ -491,7 +505,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           setMarkerPopup(marker, state);
           marker.openPopup();
           showMessage(`Type set to ${state.type}`);
-          updateNumberedIcons();
+          updateIconsForActiveTab();
           renderList();
         });
       }
@@ -645,7 +659,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
     showMessage(`Imported ${added} marker(s)`);
-  updateNumberedIcons();
+  updateIconsForActiveTab();
   renderList();
   }
 
