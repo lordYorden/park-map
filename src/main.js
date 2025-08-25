@@ -396,7 +396,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Numbered icons for items in the plan
   function makeNumberedIcon(n, baseType) {
-    const color = baseType === 'food' ? 'var(--accent)' : (baseType === 'ride' ? '#00ccff' : '#2294c5');
+    const color = baseType === 'food' ? 'var(--food)' : (baseType === 'ride' ? 'var(--ride)' : 'var(--misc)');
     return L.divIcon({
       className: 'marker marker-numbered',
       html: `<div class="pin" style="background:${color};border-color:${color}"><span class="num">${n}</span></div>`,
@@ -431,26 +431,28 @@ document.addEventListener('DOMContentLoaded', async () => {
       .join('');
 
     const html = `
-      <div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <strong>${safeLabel}</strong>
-          <button data-action="rename" style="margin-left:auto;font-size:12px">Rename</button>
+      <div class="popup-card">
+        <div class="popup-header">
+          <strong class="popup-title">${safeLabel}</strong>
+          <span class="badge badge-${type}">${type}</span>
+          <button class="btn btn-primary" data-action="rename" title="Rename marker">Rename</button>
         </div>
-        <div style="margin-top:6px;display:flex;align-items:center;gap:8px">
-          <label for="marker-type" style="font-size:12px;color:#94a3b8">Type</label>
-          <select name="marker-type" id="marker-type" style="font-size:12px;">
+        <div class="popup-row">
+          <label class="popup-label">Type</label>
+          <select name="marker-type" class="popup-select">
             ${options}
           </select>
         </div>
-        <div style="margin-top:6px">
-          <small>Lat,Lng:</small><br/>
-          <code>${coords}</code>
+        <div class="popup-row">
+          <label class="popup-label">Lat,Lng</label>
+          <code class="popup-code">${coords}</code>
         </div>
-        <div style="margin-top:6px">
-          <small>Tip: drag to move, right-click to remove</small>
+        <div class="popup-actions">
+          <button class="btn btn-primary popup-add-to-plan" title="Add to plan">Add to plan</button>
         </div>
+        <div class="popup-tip">Tip: drag to move, right-click to remove</div>
       </div>`;
-    m.bindPopup(html, { closeButton: true });
+    m.bindPopup(html, { closeButton: true, className: 'modern-popup' });
   }
 
   function addDraggableMarker(latlng, label, type, { openPopup = true } = {}) {
@@ -489,7 +491,15 @@ document.addEventListener('DOMContentLoaded', async () => {
           setMarkerPopup(marker, state);
           marker.openPopup();
           showMessage(`Type set to ${state.type}`);
+          updateNumberedIcons();
           renderList();
+        });
+      }
+
+      const addBtn = popupEl.querySelector('.popup-add-to-plan');
+      if (addBtn) {
+        addBtn.addEventListener('click', () => {
+          addToPlan(state.id);
         });
       }
     });

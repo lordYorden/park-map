@@ -1,7 +1,10 @@
 :root{
   --bg: #0f1721;
   --card: #0b1220;
-  --accent: #22c55e;
+  --food: #22c55e;
+  --misc: #ff00c3;
+  --ride: #00ccff;
+  --accent: #ffffff7a;
   --muted: #94a3b8;
 }
 *{box-sizing:border-box}
@@ -34,7 +37,7 @@ header h1{font-size:16px;margin:0;color:inherit}
   border-radius:6px;
   cursor:pointer;
 }
-.controls button:hover{color:var(--accent)}
+.controls button:hover{color:var(--food)}
 main{flex:1;display:flex}
 #map{flex:1;border-top:1px solid rgba(255,255,255,0.02)}
 .message{position:absolute;right:18px;top:62px;background:rgba(0,0,0,0.6);padding:10px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
@@ -52,10 +55,10 @@ main{flex:1;display:flex}
   width:28px;
   height:28px;
   border-radius:50% 50% 50% 0;
-  background: var(--accent);
-  border:2px solid var(--accent);
+  background: var(--food);
+  border:2px solid var(--food);
   transform:rotate(-45deg);
-  color:var(--accent);
+  color:var(--food);
   font-size:14px;
 }
 .marker.marker-food .pin{ box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
@@ -69,10 +72,10 @@ main{flex:1;display:flex}
   width:28px;
   height:28px;
   border-radius:50% 50% 50% 0;
-  background: #00ccff;
-  border:2px solid #00ccff;
+  background: var(--ride);
+  border:2px solid var(--ride);
   transform:rotate(-45deg);
-  color:#00ccff;
+  color:var(--ride);
   font-size:14px;
 }
 .marker.marker-ride .pin{ box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
@@ -125,16 +128,16 @@ main{flex:1;display:flex}
 .marker-item .badge{
   font-size:10px;
   color:#0b1220;
-  background:#2294c5; /* default blue */
+  background:var(--misc); /* default blue */
   border-radius:999px;
   padding:2px 6px;
   text-transform:uppercase;
 }
 
 /* Type-specific badge colors */
-.marker-item .badge-ride{ background: #00ccff; color: #0b1220; } /* orange */
-.marker-item .badge-food{ background: var(--accent); color: #0b1220; } /* green (uses --accent) */
-.marker-item .badge-misc{ background: #2294c5; color: #0b1220; } /* default blue */
+.marker-item .badge-ride{ background: var(--ride); color: #0b1220; } /* orange */
+.marker-item .badge-food{ background: var(--food); color: #0b1220; } /* green (uses --accent) */
+.marker-item .badge-misc{ background: var(--misc); color: #0b1220; } /* default blue */
 .marker-item .meta{
   margin-left:auto;
   color:#94a3b8;
@@ -222,6 +225,8 @@ main{flex:1;display:flex}
   }
 }
 
+.leaflet-popup-tip{ background: #0000007a; padding:4px 6px;}
+
 /* plan view */
 .plan-view{ padding: 6px; }
 .plan-actions{ display:flex; gap:8px; padding: 6px 6px 8px }
@@ -237,10 +242,10 @@ main{flex:1;display:flex}
 .plan-actions-inline button{ background:transparent; border:1px solid rgba(255,255,255,0.12); color:#e6eef8; padding:4px 6px; border-radius:6px; cursor:pointer; font-size:12px }
 
 /* generic badge (usable in plan as well) */
-.badge{ font-size:10px; color:#0b1220; background:#2294c5; border-radius:999px; padding:2px 6px; text-transform:uppercase; }
-.badge-ride{ background: #00ccff; color: #0b1220; }
-.badge-food{ background: var(--accent); color: #0b1220; }
-.badge-misc{ background: #2294c5; color: #0b1220; }
+.badge{ font-size:10px; color:#0b1220; background:var(--misc); border-radius:999px; padding:2px 6px; text-transform:uppercase; }
+.badge-ride{ background: var(--ride); color: #0b1220; }
+.badge-food{ background: var(--food); color: #0b1220; }
+.badge-misc{ background: var(--misc); color: #0b1220; }
 
 /* numbered marker icon */
 .marker.marker-numbered .pin{
@@ -250,3 +255,22 @@ main{flex:1;display:flex}
 
 /* add-to-plan button in list */
 .marker-list .add-to-plan{ margin-left:6px; background:transparent; border:1px solid rgba(255,255,255,0.2); color:#e6eef8; border-radius:6px; padding:2px 6px; font-size:12px; cursor:pointer }
+
+/* Modern popup styling */
+.leaflet-popup.modern-popup .leaflet-popup-content-wrapper{ background: rgba(0,0,0,0.75); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#e6eef8; box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
+.leaflet-popup.modern-popup .leaflet-popup-content{ margin: 10px 12px; }
+.leaflet-popup.modern-popup{ color-scheme: dark; }
+.popup-card{ display:flex; flex-direction:column; gap:10px; min-width: 220px; max-width: 260px }
+.popup-header{ display:flex; align-items:center; gap:8px }
+.popup-title{ font-weight:700 }
+.popup-row{ display:flex; align-items:center; gap:8px }
+.popup-label{ font-size:12px; color:#94a3b8; min-width:58px }
+.popup-select{ background: transparent; color:#e6eef8; border:1px solid var(--accent); border-radius:6px; padding:4px 6px; font-size:12px; appearance:none; -webkit-appearance:none }
+.popup-select:focus{ outline:2px solid var(--accent); outline-offset:1px; background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.28) }
+.popup-select option{ background:#0b1220; color:#e6eef8 }
+.popup-code{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: rgba(255,255,255,0.06); padding:2px 6px; border-radius:6px }
+.popup-actions{ display:flex; gap:8px; justify-content:flex-end }
+.btn{ border:1px solid rgba(255,255,255,0.12); color:#e6eef8; background: transparent; padding:6px 8px; border-radius:6px; font-size:12px; cursor:pointer }
+.btn-ghost{ background: transparent }
+.btn-primary{ background:transparent; color: #ffffff; border-color: var(--accent) }
+.popup-tip{ font-size:11px; color:#94a3b8; margin-top:-4px }
