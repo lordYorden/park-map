@@ -1,0 +1,252 @@
+:root{
+  --bg: #0f1721;
+  --card: #0b1220;
+  --accent: #22c55e;
+  --muted: #94a3b8;
+}
+*{box-sizing:border-box}
+html,body,#map{height:100%}
+body{
+  margin:0;
+  font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;
+  background:linear-gradient(180deg,var(--bg),#071029);
+  color:#e6eef8;
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+}
+header{
+  padding:12px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  background: #000; /* make header black */
+  color: #ffffff;
+}
+header h1{font-size:16px;margin:0;color:inherit}
+.controls{display:flex;gap:8px}
+.controls button{
+  background:#000; /* controls match header */
+  border:1px solid rgba(255,255,255,0.06);
+  color:#e6eef8; /* light text for contrast */
+  padding:8px 10px;
+  border-radius:6px;
+  cursor:pointer;
+}
+.controls button:hover{color:var(--accent)}
+main{flex:1;display:flex}
+#map{flex:1;border-top:1px solid rgba(255,255,255,0.02)}
+.message{position:absolute;right:18px;top:62px;background:rgba(0,0,0,0.6);padding:10px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+.hidden{display:none}
+
+/* ensure the leaflet container fills */
+/* Use dynamic viewport units to avoid iOS/Android URL bar jumps */
+#map{height:calc(100dvh - 64px)}
+
+/* custom marker styles */
+.marker.marker-food .pin{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:28px;
+  height:28px;
+  border-radius:50% 50% 50% 0;
+  background: var(--accent);
+  border:2px solid var(--accent);
+  transform:rotate(-45deg);
+  color:var(--accent);
+  font-size:14px;
+}
+.marker.marker-food .pin{ box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+.marker.marker-food .pin > *{ transform:rotate(45deg); }
+
+/* ride marker uses orange theme */
+.marker.marker-ride .pin{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:28px;
+  height:28px;
+  border-radius:50% 50% 50% 0;
+  background: #00ccff;
+  border:2px solid #00ccff;
+  transform:rotate(-45deg);
+  color:#00ccff;
+  font-size:14px;
+}
+.marker.marker-ride .pin{ box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+.marker.marker-ride .pin > *{ transform:rotate(45deg); }
+
+/* sidebar panel */
+.panel{
+  position:absolute;
+  left:56px; /* desktop default: side panel, leave space for Leaflet zoom controls */
+  top:64px;
+  width:260px;
+  max-height:calc(100vh - 84px);
+  overflow:auto;
+  background:rgba(0, 0, 0, 0.696);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:10px;
+  backdrop-filter: blur(6px);
+  z-index: 1200; /* above Leaflet controls/popups */
+}
+.panel-header{
+  padding:10px 12px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  color:#cbd5e1;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.tabs{ display:flex; gap:6px; }
+.tab{ background:transparent; color:#cbd5e1; border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:4px 8px; cursor:pointer; font-size:12px }
+.tab.active{ background:rgba(255,255,255,0.1); color:#fff; border-color: rgba(255,255,255,0.22) }
+.panel-header select#typeFilter{
+  background: rgba(255,255,255,0.06);
+  color: #e6eef8;
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.panel-toggle{ margin-left:auto; background:transparent; border:0; color:#cbd5e1; cursor:pointer; font-size:14px }
+.marker-list{ list-style:none; margin:0; padding:6px; }
+.marker-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px;
+  border-radius:8px;
+  cursor:pointer;
+}
+.marker-item:hover{ background: rgba(255,255,255,0.06); }
+.marker-item .badge{
+  font-size:10px;
+  color:#0b1220;
+  background:#2294c5; /* default blue */
+  border-radius:999px;
+  padding:2px 6px;
+  text-transform:uppercase;
+}
+
+/* Type-specific badge colors */
+.marker-item .badge-ride{ background: #00ccff; color: #0b1220; } /* orange */
+.marker-item .badge-food{ background: var(--accent); color: #0b1220; } /* green (uses --accent) */
+.marker-item .badge-misc{ background: #2294c5; color: #0b1220; } /* default blue */
+.marker-item .meta{
+  margin-left:auto;
+  color:#94a3b8;
+  font-size:12px;
+}
+
+/* Bottom sheet behavior on narrow screens */
+@media (max-width: 768px) {
+  .panel{
+    position: fixed; /* ensure it sticks to the visual viewport */
+    left:0;
+    right:0;
+    width:auto;
+    top:auto;
+    bottom: env(safe-area-inset-bottom, 0);
+    max-height:none;
+    height:calc(40dvh + env(safe-area-inset-bottom, 0)); /* expanded height */
+    border-radius:12px 12px 0 0;
+    border-left: none;
+    border-right: none;
+    overflow:hidden; /* let inner list scroll */
+    background:rgba(0,0,0,0.55);
+    transform: translateZ(0); /* prevent subpixel gaps */
+  }
+  .panel-header{
+    position: sticky;
+    top:0;
+    background:rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    z-index:1;
+  }
+  .panel-header select#typeFilter{ font-size: 14px; flex: 0 0 auto; }
+  .panel .marker-list{
+    height:calc(40dvh - 44px);
+    overflow:auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Plan tab: scrollable area and sticky actions */
+  .panel .plan-view{
+    height:calc(40dvh - 44px);
+    display:flex;
+    flex-direction:column;
+  }
+  .panel .plan-actions{
+    position: sticky;
+    top: 0;
+    background:rgba(0, 0, 0, 0);
+    z-index:1;
+  }
+  .panel .plan-list{
+    flex:1 1 auto;
+    overflow:auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .panel.collapsed{
+    height:calc(56px + env(safe-area-inset-bottom, 0)); /* show header only, include safe area */
+  }
+  .panel.collapsed .marker-list{ display:none; }
+  .panel.collapsed .plan-view{ display:none; }
+}
+
+/* Desktop: let the panel expand to fit its content width */
+@media (min-width: 769px) {
+  .panel{
+    width: fit-content; /* grow to content */
+    display: inline-block; /* ensure content-based sizing for absolute element */
+    max-width: 90vw; /* don't exceed viewport */
+    overflow-x: auto; /* allow horizontal scroll if absolutely necessary */
+  }
+  .panel-header{
+    position: sticky;
+    top:0;
+    background:rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    z-index:1;
+  }
+  .marker-item{ white-space: nowrap; }
+  /* collapsed-desktop: hide content but keep header visible */
+  .panel.collapsed-desktop {
+    height: auto;
+  }
+  .panel.collapsed-desktop .marker-list,
+  .panel.collapsed-desktop .plan-view {
+    display: none;
+  }
+}
+
+/* plan view */
+.plan-view{ padding: 6px; }
+.plan-actions{ display:flex; gap:8px; padding: 6px 6px 8px }
+.plan-actions button{ background:#000; border:1px solid rgba(255,255,255,0.12); color:#e6eef8; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:12px }
+.plan-list{ list-style:none; margin:0; padding:0 6px 8px; display:flex; flex-direction:column; gap:6px; }
+.plan-empty{ opacity:.7; padding: 8px }
+.plan-item{ display:flex; align-items:center; gap:8px; background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:8px }
+.plan-item.dragging{ opacity:.6 }
+.plan-item{ cursor: pointer; }
+.plan-item .order{ display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; background:#1f293700; border-radius:999px; font-weight:600; }
+.plan-item .label{ flex:1 }
+.plan-actions-inline{ display:flex; gap:6px }
+.plan-actions-inline button{ background:transparent; border:1px solid rgba(255,255,255,0.12); color:#e6eef8; padding:4px 6px; border-radius:6px; cursor:pointer; font-size:12px }
+
+/* generic badge (usable in plan as well) */
+.badge{ font-size:10px; color:#0b1220; background:#2294c5; border-radius:999px; padding:2px 6px; text-transform:uppercase; }
+.badge-ride{ background: #00ccff; color: #0b1220; }
+.badge-food{ background: var(--accent); color: #0b1220; }
+.badge-misc{ background: #2294c5; color: #0b1220; }
+
+/* numbered marker icon */
+.marker.marker-numbered .pin{
+  display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); border:2px solid currentColor; box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.marker.marker-numbered .pin .num{ transform:rotate(45deg); color:#0b1220; font-weight:700; font-size:12px }
+
+/* add-to-plan button in list */
+.marker-list .add-to-plan{ margin-left:6px; background:transparent; border:1px solid rgba(255,255,255,0.2); color:#e6eef8; border-radius:6px; padding:2px 6px; font-size:12px; cursor:pointer }

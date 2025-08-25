@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Yarden's Disney Map</title>
+    <!-- CSS will be imported from the module entry -->
+  </head>
+  <body>
+    <header>
+      <h1>Disney Map</h1>
+      <div class="controls">
+        <button id="locateBtn">Locate me</button>
+        <button id="resetBtn">Reset view</button>
+        <button id="saveBtn">Save markers</button>
+        <button id="importBtn">Import markers</button>
+        <input id="importFile" type="file" accept="application/json,.json" style="display:none" />
+      </div>
+    </header>
+
+    <main>
+      <div id="map" aria-label="Map area"></div>
+      <div id="message" class="message hidden"></div>
+      <aside id="markerPanel" class="panel" aria-label="Markers and plan panel">
+        <div class="panel-header">
+          <div class="tabs" role="tablist" aria-label="Panel tabs">
+            <button id="tabMarkers" class="tab active" role="tab" aria-selected="true" aria-controls="markersView">Markers</button>
+            <button id="tabPlan" class="tab" role="tab" aria-selected="false" aria-controls="planView">Plan</button>
+          </div>
+          <select id="typeFilter" aria-label="Filter markers by type" title="Filter by type"></select>
+          <button id="panelToggle" class="panel-toggle" aria-expanded="false" aria-controls="markerPanel" title="Expand/collapse">▾</button>
+        </div>
+        <div id="markersView" role="tabpanel" aria-labelledby="tabMarkers">
+          <ul id="markerList" class="marker-list"></ul>
+        </div>
+        <div id="planView" class="plan-view hidden" role="tabpanel" aria-labelledby="tabPlan">
+          <div class="plan-actions">
+            <button id="exportPlanBtn" title="Export trip plan as JSON">Export plan</button>
+            <button id="importPlanBtn" title="Import trip plan from JSON">Import plan</button>
+            <input id="importPlanFile" type="file" accept="application/json,.json" style="display:none" />
+            <button id="clearPlanBtn" title="Remove all from plan">Clear plan</button>
+          </div>
+          <ul id="planList" class="plan-list" aria-label="Trip order"></ul>
+        </div>
+      </aside>
+    </main>
+
+  <!-- Config (globals) -->
+  <script src="/js/config.js"></script>
+  <!-- Vite module entry (imports Leaflet from node_modules) -->
+  <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
