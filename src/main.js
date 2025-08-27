@@ -1,5 +1,7 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+// Enable offline tile caching via leaflet.offline (uses IndexedDB via idb)
+import 'leaflet.offline';
 import '../css/styles.css';
 
 // Read configuration from window (set by /js/config.js)
@@ -41,7 +43,54 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   const tileUrl = substituteVersion(TILE_URL_TEMPLATE, TILE_OPTS.version);
-  L.tileLayer(tileUrl, { attribution: ATTR, minZoom: TILE_OPTS.minZoom, maxZoom: TILE_OPTS.maxZoom }).addTo(map);
+  // Use offline-enabled tile layer
+  const offlineLayer = L.tileLayer.offline(tileUrl, {
+    attribution: ATTR,
+    minZoom: TILE_OPTS.minZoom,
+    maxZoom: TILE_OPTS.maxZoom,
+    crossOrigin: 'anonymous' // required for caching tiles from remote servers
+  });
+  offlineLayer.addTo(map);
+
+  // Add a simple save/remove tiles control
+  const allZooms = [];
+  for (let z = (TILE_OPTS.minZoom ?? 0); z <= (TILE_OPTS.maxZoom ?? 19); z++) allZooms.push(z);
+  const saveControl = L.control.savetiles(offlineLayer, {
+    position: 'topleft',
+    zoomlevels: allZooms, // which zoom levels to cache
+    confirm: (layer, ok) => {
+      const count = (layer && layer._tilesforSave) ? layer._tilesforSave.length : 'selected';
+      if (confirm(`Save ${count} tile(s) for offline use?`)) ok();
+    },
+    confirmRemoval: (layer, ok) => {
+      const count = (layer && layer._tilesforSave) ? layer._tilesforSave.length : 'selected';
+      if (confirm(`Remove ${count} cached tile(s)?`)) ok();
+    },
+    saveText: '⬇',
+    rmText: '✕'
+  });
+  saveControl.addTo(map);
+
+
+  // Progress and status messages
+  offlineLayer.on('savestart', () => showMessage('Caching tiles…'));
+  offlineLayer.on('saveend', (ev) => {
+    const n = (ev && ev._tilesforSave && ev._tilesforSave.length) || '';
+    showMessage(`Caching complete ${n ? `(${n} tiles)` : ''}`);
+  });
+  offlineLayer.on('loadend', () => {
+    // Fired when a tile load completes (from network or cache)
+  });
+  offlineLayer.on('tilecachehit', (e) => {
+    console.debug('[offline] cache hit', e && e.url);
+  });
+  offlineLayer.on('tilecachemiss', (e) => {
+    console.debug('[offline] cache miss', e && e.url);
+  });
+  offlineLayer.on('tilesremoved', (ev) => {
+    const n = (ev && ev._tilesforSave && ev._tilesforSave.length) || '';
+    showMessage(`Removed cached tiles ${n ? `(${n})` : ''}`);
+  });
 
   // Draggable markers layer
   const markersLayer = L.layerGroup().addTo(map);
@@ -621,6 +670,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+
   function clearAllMarkers() {
     markersLayer.clearLayers();
     markersState.clear();
@@ -745,4 +795,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   await loadDefaultPlan();
+
+  // end DOMContentLoaded
 });
