@@ -1,5 +1,142 @@
 {
-  "createdAt": "2025-08-26T00:00:00.000Z",
-  "count": 0,
-  "plan": []
+  "createdAt": "2025-08-25T15:31:51.892Z",
+  "count": 17,
+  "plan": [
+    {
+      "order": 1,
+      "id": "m1",
+      "label": "Star Wars: Rise of the Resistance",
+      "type": "ride",
+      "lat": 33.81389465991132,
+      "lng": -117.92309537529947
+    },
+    {
+      "order": 2,
+      "id": "m3",
+      "label": "Millennium Falcon: Smugglers Run",
+      "type": "ride",
+      "lat": 33.81488634205791,
+      "lng": -117.92135596275331
+    },
+    {
+      "order": 3,
+      "id": "m2",
+      "label": "ogas cantina",
+      "type": "food",
+      "lat": 33.814673521352645,
+      "lng": -117.92096838355067
+    },
+    {
+      "order": 4,
+      "id": "m4",
+      "label": "Tiana's Bayou Adventure",
+      "type": "ride",
+      "lat": 33.812232173712815,
+      "lng": -117.92206674814227
+    },
+    {
+      "order": 5,
+      "id": "m6",
+      "label": "Pirates of the Caribbean",
+      "type": "ride",
+      "lat": 33.811384204168114,
+      "lng": -117.92080745100978
+    },
+    {
+      "order": 6,
+      "id": "m5",
+      "label": "Big Thunder Mountain Railroad",
+      "type": "ride",
+      "lat": 33.81246951453716,
+      "lng": -117.92034208774568
+    },
+    {
+      "order": 7,
+      "id": "m10",
+      "label": "Soarin' Around the World",
+      "type": "ride",
+      "lat": 33.80816050604786,
+      "lng": -117.91998803615571
+    },
+    {
+      "order": 8,
+      "id": "m12",
+      "label": "Grizzly river run",
+      "type": "ride",
+      "lat": 33.807425044593444,
+      "lng": -117.92077928781511
+    },
+    {
+      "order": 9,
+      "id": "m13",
+      "label": "Incredecoaster",
+      "type": "ride",
+      "lat": 33.80457228580385,
+      "lng": -117.92057543992998
+    },
+    {
+      "order": 10,
+      "id": "m14",
+      "label": "Pym test kitchen",
+      "type": "food",
+      "lat": 33.80673637950048,
+      "lng": -117.91770681738856
+    },
+    {
+      "order": 11,
+      "id": "m15",
+      "label": "Terran Treats",
+      "type": "food",
+      "lat": 33.807105228322136,
+      "lng": -117.91701614856721
+    },
+    {
+      "order": 12,
+      "id": "m11",
+      "label": "Guardians of the Galaxy - Mission: BREAKOUT!",
+      "type": "ride",
+      "lat": 33.80686341522581,
+      "lng": -117.91717171669008
+    },
+    {
+      "order": 13,
+      "id": "m7",
+      "label": "Space mountain",
+      "type": "ride",
+      "lat": 33.81137083270192,
+      "lng": -117.91730448603633
+    },
+    {
+      "order": 14,
+      "id": "m16",
+      "label": "Alien Pizza planet",
+      "type": "food",
+      "lat": 33.811672804470476,
+      "lng": -117.91691556572916
+    },
+    {
+      "order": 15,
+      "id": "m9",
+      "label": "Matterhorn Bobsleds",
+      "type": "ride",
+      "lat": 33.813393243214,
+      "lng": -117.91761830449107
+    },
+    {
+      "order": 16,
+      "id": "m8",
+      "label": "Peter Pan's Flight",
+      "type": "ride",
+      "lat": 33.81330298789638,
+      "lng": -117.91885346174242
+    },
+    {
+      "order": 17,
+      "id": "m17",
+      "label": "Churros",
+      "type": "food",
+      "lat": 33.81222325967195,
+      "lng": -117.92037695355292
+    }
+  ]
 }
