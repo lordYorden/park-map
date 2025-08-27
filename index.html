@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Yarden's Disney Map</title>
     <!-- CSS will be imported from the module entry -->
-    <script type="module" crossorigin src="./assets/index-BrS59spM.js"></script>
+    <script type="module" crossorigin src="./assets/index-EljPDDk_.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-CoMUMl6H.css">
   </head>
   <body>
@@ -14,7 +14,7 @@
       <div class="controls">
         <button id="locateBtn">Locate me</button>
         <button id="resetBtn">Reset view</button>
-        <button id="saveBtn">Save markers</button>
+        <button id="saveBtn">Export markers</button>
         <button id="importBtn">Import markers</button>
         <input id="importFile" type="file" accept="application/json,.json" style="display:none" />
       </div>
@@ -41,6 +41,7 @@
             <button id="importPlanBtn" title="Import trip plan from JSON">Import plan</button>
             <input id="importPlanFile" type="file" accept="application/json,.json" style="display:none" />
             <button id="clearPlanBtn" title="Remove all from plan">Clear plan</button>
+            <button id="savePlanChanges" title="Save plan as default">Save Changes</button>
           </div>
           <ul id="planList" class="plan-list" aria-label="Trip order"></ul>
         </div>
@@ -48,7 +49,7 @@
     </main>
 
   <!-- Config (globals) -->
-  <script src="./js/config.js"></script>
+  <!-- <script src="/js/config.js"></script> -->
   <!-- Vite module entry (imports Leaflet from node_modules) -->
   </body>
 </html>
