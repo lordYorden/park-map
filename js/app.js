@@ -1,4 +1,3 @@
-// Dynamically load Leaflet CSS/JS provided in js/config.js
 (function () {
   const showMessage = (msg, timeout = 3500) => {
     const el = document.getElementById('message');
@@ -7,40 +6,7 @@
     if (timeout) setTimeout(() => el.classList.add('hidden'), timeout);
   };
 
-  function loadCSS(url) {
-    return new Promise((res, rej) => {
-      if (!url) return res();
-      const l = document.createElement('link');
-      l.rel = 'stylesheet';
-      l.href = url;
-      l.onload = () => res();
-      l.onerror = () => rej(new Error('Failed to load CSS ' + url));
-      document.head.appendChild(l);
-    });
-  }
-
-  function loadScript(url) {
-    return new Promise((res, rej) => {
-      if (!url) return res();
-      const s = document.createElement('script');
-      s.src = url;
-      s.async = true;
-      s.onload = () => res();
-      s.onerror = () => rej(new Error('Failed to load script ' + url));
-      document.head.appendChild(s);
-    });
-  }
-
   async function main() {
-    try {
-      await loadCSS(window.LEAFLET_CSS);
-      await loadScript(window.LEAFLET_JS);
-    } catch (err) {
-      showMessage('Leaflet assets not loaded. Paste CDN URLs into js/config.js');
-      console.error(err);
-      return;
-    }
-
     if (!window.L) {
       showMessage('Leaflet not available after loading. Check CDN URL.');
       return;
@@ -103,7 +69,7 @@
       map.setView(window.INITIAL_VIEW.center, window.INITIAL_VIEW.zoom);
     });
 
-    showMessage('Map ready — add your Leaflet CDN URLs to js/config.js if blank', 2500);
+  showMessage('Map ready', 2500);
   }
 
   // wait for DOM

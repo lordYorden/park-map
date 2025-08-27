@@ -1,11 +1,4 @@
-// Paste your Leaflet CDN URLs here. Example:
-// window.LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-// window.LEAFLET_JS  = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-
-window.LEAFLET_CSS = window.LEAFLET_CSS || '';
-window.LEAFLET_JS = window.LEAFLET_JS || '';
-
-// Disney parks tile template you provided. Keep the {version} token — app will substitute it.
+// Disney parks tile template you provided. Keep the {version} token  app will substitute it.
 window.MAP_TILE_URL = window.MAP_TILE_URL || 'https://cdn6.parksmedia.wdprapps.disney.com/media/maps/prod/disneyland/{version}/{z}/{x}/{y}.jpg';
 window.MAP_TILE_ATTR = window.MAP_TILE_ATTR || '&copy; Disney';
 
