@@ -694,7 +694,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load default markers from markers_new.json on startup (fallback to markers.json)
   async function loadDefaultMarkers() {
     try {
-      const resp = await fetch('/markers_new.json', { cache: 'no-store' });
+      const resp = await fetch('./markers_new.json', { cache: 'no-store' });
       if (!resp.ok) throw new Error('markers_new.json not found');
       const json = await resp.json();
       importMarkersFromObject(json, { clear: true });
@@ -707,7 +707,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // fallback to markers.json if present
     try {
-      const resp2 = await fetch('/markers.json', { cache: 'no-store' });
+      const resp2 = await fetch('./markers.json', { cache: 'no-store' });
       if (!resp2.ok) throw new Error('markers.json not found');
       const json2 = await resp2.json();
       importMarkersFromObject(json2, { clear: true });
@@ -732,7 +732,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Try to load a default trip plan from /trip-plan.json
   async function loadDefaultPlan() {
     try {
-      const resp = await fetch('/trip-plan.json', { cache: 'no-store' });
+      const resp = await fetch('./trip-plan.json', { cache: 'no-store' });
       if (!resp.ok) throw new Error('trip-plan.json not found');
       const json = await resp.json();
       await importPlanFromObject(json);
