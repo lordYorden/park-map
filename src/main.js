@@ -1,27 +1,27 @@
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-// Enable offline tile caching via leaflet.offline (uses IndexedDB via idb)
-import 'leaflet.offline';
-import '../css/styles.css';
-
-// Read configuration from window (set by /js/config.js)
-const TILE_URL_TEMPLATE = window.MAP_TILE_URL;
-const ATTR = window.MAP_TILE_ATTR || '';
-const TILE_OPTS = window.TILE_LAYER_OPTIONS || { minZoom: 0, maxZoom: 18, version: '' };
-const INITIAL_VIEW = window.INITIAL_VIEW || { center: [0, 0], zoom: 2 };
-const MAX_BOUNDS = window.MAP_MAX_BOUNDS || null;
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import "leaflet.offline";
+import "../css/styles.css";
+import {
+  TILE_URL_TEMPLATE,
+  ATTR,
+  TILE_OPTS,
+  INITIAL_VIEW,
+  MAX_BOUNDS,
+} from "./config";
+import { openDB } from "idb";
 
 function substituteVersion(url, version) {
   if (!url) return url;
-  return url.replace('{version}', version || '');
+  return url.replace("{version}", version || "");
 }
 
 function showMessage(msg, timeout = 3000) {
-  const el = document.getElementById('message');
+  const el = document.getElementById("message");
   if (!el) return;
   el.textContent = msg;
-  el.classList.remove('hidden');
-  if (timeout) setTimeout(() => el.classList.add('hidden'), timeout);
+  el.classList.remove("hidden");
+  if (timeout) setTimeout(() => el.classList.add("hidden"), timeout);
 }
 
 function formatLatLng(latlng) {
@@ -29,9 +29,9 @@ function formatLatLng(latlng) {
   return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener("DOMContentLoaded", async () => {
   // Init map
-  const map = L.map('map', {
+  const map = L.map("map", {
     minZoom: TILE_OPTS.minZoom,
     maxZoom: TILE_OPTS.maxZoom,
   }).setView(INITIAL_VIEW.center, INITIAL_VIEW.zoom);
@@ -39,7 +39,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (MAX_BOUNDS) {
     const sw = MAX_BOUNDS.southWest;
     const ne = MAX_BOUNDS.northEast;
-    map.setMaxBounds([[sw.lat, sw.lng], [ne.lat, ne.lng]]);
+    map.setMaxBounds([
+      [sw.lat, sw.lng],
+      [ne.lat, ne.lng],
+    ]);
   }
 
   const tileUrl = substituteVersion(TILE_URL_TEMPLATE, TILE_OPTS.version);
@@ -48,48 +51,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     attribution: ATTR,
     minZoom: TILE_OPTS.minZoom,
     maxZoom: TILE_OPTS.maxZoom,
-    crossOrigin: 'anonymous' // required for caching tiles from remote servers
+    crossOrigin: "anonymous", // required for caching tiles from remote servers
   });
   offlineLayer.addTo(map);
 
   // Add a simple save/remove tiles control
   const allZooms = [];
-  for (let z = (TILE_OPTS.minZoom ?? 0); z <= (TILE_OPTS.maxZoom ?? 19); z++) allZooms.push(z);
+  for (let z = TILE_OPTS.minZoom ?? 0; z <= (TILE_OPTS.maxZoom ?? 19); z++)
+    allZooms.push(z);
   const saveControl = L.control.savetiles(offlineLayer, {
-    position: 'topleft',
+    position: "topleft",
     zoomlevels: allZooms, // which zoom levels to cache
     confirm: (layer, ok) => {
-      const count = (layer && layer._tilesforSave) ? layer._tilesforSave.length : 'selected';
+      const count =
+        layer && layer._tilesforSave ? layer._tilesforSave.length : "selected";
       if (confirm(`Save ${count} tile(s) for offline use?`)) ok();
     },
     confirmRemoval: (layer, ok) => {
-      const count = (layer && layer._tilesforSave) ? layer._tilesforSave.length : 'selected';
+      const count =
+        layer && layer._tilesforSave ? layer._tilesforSave.length : "selected";
       if (confirm(`Remove ${count} cached tile(s)?`)) ok();
     },
-    saveText: '⬇',
-    rmText: '✕'
+    saveText: "⬇",
+    rmText: "✕",
   });
   saveControl.addTo(map);
 
-
   // Progress and status messages
-  offlineLayer.on('savestart', () => showMessage('Caching tiles…'));
-  offlineLayer.on('saveend', (ev) => {
-    const n = (ev && ev._tilesforSave && ev._tilesforSave.length) || '';
-    showMessage(`Caching complete ${n ? `(${n} tiles)` : ''}`);
+  offlineLayer.on("savestart", () => showMessage("Caching tiles…"));
+  offlineLayer.on("saveend", (ev) => {
+    const n = (ev && ev._tilesforSave && ev._tilesforSave.length) || "";
+    showMessage(`Caching complete ${n ? `(${n} tiles)` : ""}`);
   });
-  offlineLayer.on('loadend', () => {
+  offlineLayer.on("loadend", () => {
     // Fired when a tile load completes (from network or cache)
   });
-  offlineLayer.on('tilecachehit', (e) => {
-    console.debug('[offline] cache hit', e && e.url);
+  offlineLayer.on("tilecachehit", (e) => {
+    console.debug("[offline] cache hit", e && e.url);
   });
-  offlineLayer.on('tilecachemiss', (e) => {
-    console.debug('[offline] cache miss', e && e.url);
+  offlineLayer.on("tilecachemiss", (e) => {
+    console.debug("[offline] cache miss", e && e.url);
   });
-  offlineLayer.on('tilesremoved', (ev) => {
-    const n = (ev && ev._tilesforSave && ev._tilesforSave.length) || '';
-    showMessage(`Removed cached tiles ${n ? `(${n})` : ''}`);
+  offlineLayer.on("tilesremoved", (ev) => {
+    const n = (ev && ev._tilesforSave && ev._tilesforSave.length) || "";
+    showMessage(`Removed cached tiles ${n ? `(${n})` : ""}`);
   });
 
   // Draggable markers layer
@@ -98,24 +103,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   const markersState = new Map(); // id -> { id, marker, label, type }
   let idCounter = 1;
 
-  const TYPES = ['food', 'ride', 'show', 'shop', 'restroom', 'service', 'photo', 'misc'];
+  const TYPES = [
+    "food",
+    "ride",
+    "show",
+    "shop",
+    "restroom",
+    "service",
+    "photo",
+    "misc",
+  ];
 
   // Helper to detect mobile viewport; used to disable dragging on small screens
   function isMobileViewport() {
-    return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+    return window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
   }
 
   // Icons by type
   const DefaultIcon = new L.Icon.Default();
   const FoodIcon = L.divIcon({
-    className: 'marker marker-food',
+    className: "marker marker-food",
     html: '<div class="pin">🍔</div>',
     iconSize: [28, 28],
     iconAnchor: [14, 28],
     popupAnchor: [0, -24],
   });
   const RideIcon = L.divIcon({
-    className: 'marker marker-ride',
+    className: "marker marker-ride",
     html: '<div class="pin">\ud83c\udfa2</div>',
     iconSize: [28, 28],
     iconAnchor: [14, 28],
@@ -123,115 +137,126 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   function getIconForType(type) {
-    if (type === 'food') return FoodIcon;
-    if (type === 'ride') return RideIcon;
+    if (type === "food") return FoodIcon;
+    if (type === "ride") return RideIcon;
     return DefaultIcon;
   }
 
   // DOM elements for panel
-  const listEl = document.getElementById('markerList');
-  const panelEl = document.getElementById('markerPanel');
-  const panelToggle = document.getElementById('panelToggle');
-  const typeFilterEl = document.getElementById('typeFilter');
-  let activeTypeFilter = 'all';
+  const listEl = document.getElementById("markerList");
+  const panelEl = document.getElementById("markerPanel");
+  const panelToggle = document.getElementById("panelToggle");
+  const typeFilterEl = document.getElementById("typeFilter");
+  let activeTypeFilter = "all";
 
   // Plan tab elements
-  const tabMarkers = document.getElementById('tabMarkers');
-  const tabPlan = document.getElementById('tabPlan');
-  const markersView = document.getElementById('markersView');
-  const planView = document.getElementById('planView');
-  const planListEl = document.getElementById('planList');
-  const exportPlanBtn = document.getElementById('exportPlanBtn');
-  const importPlanBtn = document.getElementById('importPlanBtn');
-  const importPlanFile = document.getElementById('importPlanFile');
-  const clearPlanBtn = document.getElementById('clearPlanBtn');
+  const tabMarkers = document.getElementById("tabMarkers");
+  const tabPlan = document.getElementById("tabPlan");
+  const markersView = document.getElementById("markersView");
+  const planView = document.getElementById("planView");
+  const planListEl = document.getElementById("planList");
+  const exportPlanBtn = document.getElementById("exportPlanBtn");
+  const importPlanBtn = document.getElementById("importPlanBtn");
+  const importPlanFile = document.getElementById("importPlanFile");
+  const clearPlanBtn = document.getElementById("clearPlanBtn");
+  const savePlanChanges = document.getElementById("savePlanChanges");
 
   // Plan state: array of marker ids in order
   const planOrder = [];
   // Track active tab to decide which icon mode to use
-  let activeTab = 'markers';
+  let activeTab = "markers";
 
   function setActiveTab(which) {
-    const isPlan = which === 'plan';
-    activeTab = isPlan ? 'plan' : 'markers';
-    tabMarkers && tabMarkers.classList.toggle('active', !isPlan);
-    tabPlan && tabPlan.classList.toggle('active', isPlan);
-    markersView && markersView.classList.toggle('hidden', isPlan);
-    planView && planView.classList.toggle('hidden', !isPlan);
+    const isPlan = which === "plan";
+    activeTab = isPlan ? "plan" : "markers";
+    tabMarkers && tabMarkers.classList.toggle("active", !isPlan);
+    tabPlan && tabPlan.classList.toggle("active", isPlan);
+    markersView && markersView.classList.toggle("hidden", isPlan);
+    planView && planView.classList.toggle("hidden", !isPlan);
     // Show/hide filter only on Markers tab
-    typeFilterEl && typeFilterEl.classList.toggle('hidden', isPlan);
+    typeFilterEl && typeFilterEl.classList.toggle("hidden", isPlan);
     // Swap marker icons depending on active tab
     updateIconsForActiveTab();
   }
 
-  tabMarkers && tabMarkers.addEventListener('click', () => setActiveTab('markers'));
-  tabPlan && tabPlan.addEventListener('click', () => setActiveTab('plan'));
+  tabMarkers &&
+    tabMarkers.addEventListener("click", () => setActiveTab("markers"));
+  tabPlan && tabPlan.addEventListener("click", () => setActiveTab("plan"));
 
   function buildTypeFilterOptions() {
     if (!typeFilterEl) return;
-    const opts = ['all', ...TYPES];
+    const opts = ["all", ...TYPES];
     typeFilterEl.innerHTML = opts
-      .map(t => `<option value="${t}">${t}</option>`) 
-      .join('');
+      .map((t) => `<option value="${t}">${t}</option>`)
+      .join("");
     typeFilterEl.value = activeTypeFilter;
-    typeFilterEl.addEventListener('change', () => {
-      activeTypeFilter = typeFilterEl.value || 'all';
+    typeFilterEl.addEventListener("change", () => {
+      activeTypeFilter = typeFilterEl.value || "all";
       applyFilter();
       renderList();
-      showMessage(activeTypeFilter === 'all' ? 'Showing all markers' : `Filter: ${activeTypeFilter}`);
+      showMessage(
+        activeTypeFilter === "all"
+          ? "Showing all markers"
+          : `Filter: ${activeTypeFilter}`
+      );
     });
   }
 
   function applyFilter() {
-    const wantsAll = activeTypeFilter === 'all';
+    const wantsAll = activeTypeFilter === "all";
     markersState.forEach((s) => {
-      const visible = wantsAll || (s.type === activeTypeFilter);
+      const visible = wantsAll || s.type === activeTypeFilter;
       if (visible) {
         if (!markersLayer.hasLayer(s.marker)) s.marker.addTo(markersLayer);
-        s.marker.getElement() && (s.marker.getElement().style.display = '');
+        s.marker.getElement() && (s.marker.getElement().style.display = "");
       } else {
         // More efficient than removing from layer: hide DOM element
-        s.marker.getElement() && (s.marker.getElement().style.display = 'none');
+        s.marker.getElement() && (s.marker.getElement().style.display = "none");
       }
     });
   }
   function renderList() {
     if (!listEl) return;
-    const wantsAll = activeTypeFilter === 'all';
-    const items = Array.from(markersState.values()).filter(s => wantsAll || s.type === activeTypeFilter);
+    const wantsAll = activeTypeFilter === "all";
+    const items = Array.from(markersState.values()).filter(
+      (s) => wantsAll || s.type === activeTypeFilter
+    );
     if (!items.length) {
-      listEl.innerHTML = '<li class="marker-item" style="opacity:.7">No markers</li>';
+      listEl.innerHTML =
+        '<li class="marker-item" style="opacity:.7">No markers</li>';
       return;
     }
-    listEl.innerHTML = items.map(s => {
-      const { lat, lng } = s.marker.getLatLng();
-      const coords = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-      const label = s.label || s.id;
-      const type = s.type || 'misc';
-      return `
+    listEl.innerHTML = items
+      .map((s) => {
+        const { lat, lng } = s.marker.getLatLng();
+        const coords = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        const label = s.label || s.id;
+        const type = s.type || "misc";
+        return `
         <li class="marker-item" data-id="${s.id}">
           <span class="badge badge-${type}">${type}</span>
           <span>${label}</span>
           <span class="meta">${coords}</span>
           <button class="add-to-plan" title="Add to plan">＋</button>
         </li>`;
-    }).join('');
+      })
+      .join("");
 
     // Attach click handlers
-    listEl.querySelectorAll('.marker-item').forEach(li => {
-      li.addEventListener('click', () => {
-        const id = li.getAttribute('data-id');
+    listEl.querySelectorAll(".marker-item").forEach((li) => {
+      li.addEventListener("click", () => {
+        const id = li.getAttribute("data-id");
         const s = id && markersState.get(id);
         if (!s) return;
         const latlng = s.marker.getLatLng();
         map.flyTo(latlng, Math.max(map.getZoom(), 19), { duration: 0.7 });
         s.marker.openPopup();
       });
-      const addBtn = li.querySelector('button.add-to-plan');
+      const addBtn = li.querySelector("button.add-to-plan");
       if (addBtn) {
-        addBtn.addEventListener('click', (ev) => {
+        addBtn.addEventListener("click", (ev) => {
           ev.stopPropagation();
-          const id = li.getAttribute('data-id');
+          const id = li.getAttribute("data-id");
           if (!id) return;
           addToPlan(id);
         });
@@ -243,11 +268,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!markersState.has(id)) return;
     if (!planOrder.includes(id)) {
       planOrder.push(id);
-  updateIconsForActiveTab();
+      updateIconsForActiveTab();
       renderPlan();
-      showMessage('Added to plan');
+      showMessage("Added to plan");
     } else {
-      showMessage('Already in plan');
+      showMessage("Already in plan");
     }
   }
 
@@ -255,24 +280,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     const idx = planOrder.indexOf(id);
     if (idx !== -1) {
       planOrder.splice(idx, 1);
-  updateIconsForActiveTab();
+      updateIconsForActiveTab();
       renderPlan();
-      showMessage('Removed from plan');
+      showMessage("Removed from plan");
     }
   }
 
   function renderPlan() {
     if (!planListEl) return;
     if (!planOrder.length) {
-      planListEl.innerHTML = '<li class="plan-empty">No items in your plan. Add from the Markers tab.</li>';
+      planListEl.innerHTML =
+        '<li class="plan-empty">No items in your plan. Add from the Markers tab.</li>';
       return;
     }
-    planListEl.innerHTML = planOrder.map((id, i) => {
-      const s = markersState.get(id);
-      if (!s) return '';
-      const label = s.label || id;
-      const type = s.type || 'misc';
-      return `
+    planListEl.innerHTML = planOrder
+      .map((id, i) => {
+        const s = markersState.get(id);
+        if (!s) return "";
+        const label = s.label || id;
+        const type = s.type || "misc";
+        return `
         <li class="plan-item" data-id="${id}" draggable="true">
           <span class="order">${i + 1}</span>
           <span class="badge badge-${type}">${type}</span>
@@ -283,25 +310,38 @@ document.addEventListener('DOMContentLoaded', async () => {
             <button class="plan-remove" title="Remove">✕</button>
           </div>
         </li>`;
-    }).join('');
+      })
+      .join("");
 
     // wire move/remove
-    planListEl.querySelectorAll('.plan-item').forEach(li => {
-      const id = li.getAttribute('data-id');
-      const up = li.querySelector('.plan-up');
-      const down = li.querySelector('.plan-down');
-      const rem = li.querySelector('.plan-remove');
+    planListEl.querySelectorAll(".plan-item").forEach((li) => {
+      const id = li.getAttribute("data-id");
+      const up = li.querySelector(".plan-up");
+      const down = li.querySelector(".plan-down");
+      const rem = li.querySelector(".plan-remove");
       // clicking the row should move to the marker; prevent action buttons from triggering it
-      li.addEventListener('click', () => {
+      li.addEventListener("click", () => {
         const s = markersState.get(id);
         if (!s) return;
         const latlng = s.marker.getLatLng();
         map.flyTo(latlng, Math.max(map.getZoom(), 19), { duration: 0.7 });
         //s.marker.openPopup();
       });
-      up && up.addEventListener('click', (ev) => { ev.stopPropagation(); moveInPlan(id, -1); });
-      down && down.addEventListener('click', (ev) => { ev.stopPropagation(); moveInPlan(id, +1); });
-      rem && rem.addEventListener('click', (ev) => { ev.stopPropagation(); removeFromPlan(id); });
+      up &&
+        up.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          moveInPlan(id, -1);
+        });
+      down &&
+        down.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          moveInPlan(id, +1);
+        });
+      rem &&
+        rem.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          removeFromPlan(id);
+        });
     });
 
     // drag & drop
@@ -316,60 +356,64 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tmp = planOrder[i];
     planOrder[i] = planOrder[j];
     planOrder[j] = tmp;
-  updateIconsForActiveTab();
+    updateIconsForActiveTab();
     renderPlan();
   }
 
   function enableDragAndDrop() {
     if (!planListEl) return;
     let draggedId = null;
-    planListEl.querySelectorAll('.plan-item').forEach(item => {
-      item.addEventListener('dragstart', () => {
-        draggedId = item.getAttribute('data-id');
-        item.classList.add('dragging');
+    planListEl.querySelectorAll(".plan-item").forEach((item) => {
+      item.addEventListener("dragstart", () => {
+        draggedId = item.getAttribute("data-id");
+        item.classList.add("dragging");
       });
-      item.addEventListener('dragend', () => {
+      item.addEventListener("dragend", () => {
         draggedId = null;
-        item.classList.remove('dragging');
+        item.classList.remove("dragging");
       });
-      item.addEventListener('dragover', (ev) => {
+      item.addEventListener("dragover", (ev) => {
         ev.preventDefault();
-        const overId = item.getAttribute('data-id');
+        const overId = item.getAttribute("data-id");
         if (!draggedId || draggedId === overId) return;
         const from = planOrder.indexOf(draggedId);
         const to = planOrder.indexOf(overId);
         if (from === -1 || to === -1) return;
         planOrder.splice(to, 0, planOrder.splice(from, 1)[0]);
         renderPlan();
-  updateIconsForActiveTab();
+        updateIconsForActiveTab();
       });
     });
   }
 
   function exportPlan() {
-    const items = planOrder.map((id, idx) => {
-      const s = markersState.get(id);
-      if (!s) return null;
-      const { lat, lng } = s.marker.getLatLng();
-      return {
-        order: idx + 1,
-        id,
-        label: s.label || '',
-        type: s.type || 'misc',
-        lat,
-        lng,
-      };
-    }).filter(Boolean);
+    const items = planOrder
+      .map((id, idx) => {
+        const s = markersState.get(id);
+        if (!s) return null;
+        const { lat, lng } = s.marker.getLatLng();
+        return {
+          order: idx + 1,
+          id,
+          label: s.label || "",
+          type: s.type || "misc",
+          lat,
+          lng,
+        };
+      })
+      .filter(Boolean);
     const payload = {
       createdAt: new Date().toISOString(),
       count: items.length,
       plan: items,
     };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'trip-plan.json';
+    a.download = "trip-plan.json";
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -377,62 +421,125 @@ document.addEventListener('DOMContentLoaded', async () => {
     showMessage(`Exported ${items.length} item(s)`);
   }
 
-  exportPlanBtn && exportPlanBtn.addEventListener('click', exportPlan);
-  clearPlanBtn && clearPlanBtn.addEventListener('click', () => {
-    planOrder.splice(0, planOrder.length);
-  updateIconsForActiveTab();
-    renderPlan();
-  });
+  async function saveCurrentPlan() {
+    // get current plan items
+    const items = planOrder
+      .map((id, idx) => {
+        const s = markersState.get(id);
+        if (!s) return null;
+        const { lat, lng } = s.marker.getLatLng();
+        return {
+          order: idx + 1,
+          id,
+          label: s.label || "",
+          type: s.type || "misc",
+          lat,
+          lng,
+        };
+      })
+      .filter(Boolean);
+
+    const payload = {
+      createdAt: new Date().toISOString(),
+      count: items.length,
+      plan: items,
+    };
+
+    try {
+      const db = await openDB("park-map", 1, {
+        upgrade(db) {
+          if (!db.objectStoreNames.contains("plans"))
+            db.createObjectStore("plans");
+        },
+      });
+      await db.put("plans", payload, "current-plan");
+      alert("Plan saved successfully");
+    } catch (e) {
+      console.warn("Could not write plan to IndexedDB", e);
+    }
+  }
+
+  exportPlanBtn && exportPlanBtn.addEventListener("click", exportPlan);
+  clearPlanBtn &&
+    clearPlanBtn.addEventListener("click", () => {
+      planOrder.splice(0, planOrder.length);
+      updateIconsForActiveTab();
+      renderPlan();
+    });
+  savePlanChanges && savePlanChanges.addEventListener("click", saveCurrentPlan);
 
   function validateImportedPlan(data) {
-    if (!data || typeof data !== 'object') return 'Invalid JSON';
-    if (!Array.isArray(data.plan)) return 'Missing plan array';
+    if (!data || typeof data !== "object") return "Invalid JSON";
+    if (!Array.isArray(data.plan)) return "Missing plan array";
     for (const p of data.plan) {
-      if (typeof p !== 'object') return 'Invalid plan item';
-      if (typeof p.order !== 'number') return 'Plan item missing order';
-      if (typeof p.lat !== 'number' || typeof p.lng !== 'number') return 'Plan item missing numeric lat/lng';
+      if (typeof p !== "object") return "Invalid plan item";
+      if (typeof p.order !== "number") return "Plan item missing order";
+      if (typeof p.lat !== "number" || typeof p.lng !== "number")
+        return "Plan item missing numeric lat/lng";
     }
     return null;
   }
 
   async function importPlanFromObject(data) {
     const err = validateImportedPlan(data);
-    if (err) { showMessage(`Import failed: ${err}`); return; }
+    if (err) {
+      showMessage(`Import failed: ${err}`);
+      return;
+    }
     // Sort by order just in case
-    const items = [...data.plan].sort((a,b) => a.order - b.order);
+    const items = [...data.plan].sort((a, b) => a.order - b.order);
     // Ensure markers exist (match by id when possible, otherwise create)
     for (const item of items) {
       let id = item.id || null;
       let state = id ? markersState.get(id) : null;
       if (!state) {
         // Try to find an existing marker at near-same coords
-        const existing = Array.from(markersState.values()).find(s => {
+        const existing = Array.from(markersState.values()).find((s) => {
           const ll = s.marker.getLatLng();
-          return Math.abs(ll.lat - item.lat) < 1e-6 && Math.abs(ll.lng - item.lng) < 1e-6;
+          return (
+            Math.abs(ll.lat - item.lat) < 1e-6 &&
+            Math.abs(ll.lng - item.lng) < 1e-6
+          );
         });
-        state = existing || addDraggableMarker({ lat: item.lat, lng: item.lng }, item.label || undefined, (item.type || 'misc'), { openPopup: false });
+        state =
+          existing ||
+          addDraggableMarker(
+            { lat: item.lat, lng: item.lng },
+            item.label || undefined,
+            item.type || "misc",
+            { openPopup: false }
+          );
         id = state.id;
       }
     }
     // Build planOrder from items in order
-    planOrder.splice(0, planOrder.length, ...items.map(it => {
-      // prefer input id if present and exists; else match by coords
-      if (it.id && markersState.has(it.id)) return it.id;
-      const match = Array.from(markersState.values()).find(s => {
-        const ll = s.marker.getLatLng();
-        return Math.abs(ll.lat - it.lat) < 1e-6 && Math.abs(ll.lng - it.lng) < 1e-6;
-      });
-      return match ? match.id : null;
-    }).filter(Boolean));
+    planOrder.splice(
+      0,
+      planOrder.length,
+      ...items
+        .map((it) => {
+          // prefer input id if present and exists; else match by coords
+          if (it.id && markersState.has(it.id)) return it.id;
+          const match = Array.from(markersState.values()).find((s) => {
+            const ll = s.marker.getLatLng();
+            return (
+              Math.abs(ll.lat - it.lat) < 1e-6 &&
+              Math.abs(ll.lng - it.lng) < 1e-6
+            );
+          });
+          return match ? match.id : null;
+        })
+        .filter(Boolean)
+    );
 
-  updateIconsForActiveTab();
+    updateIconsForActiveTab();
     renderPlan();
     showMessage(`Imported plan with ${planOrder.length} item(s)`);
   }
 
   if (importPlanBtn && importPlanFile) {
-    importPlanBtn.addEventListener('click', () => importPlanFile.click());
-    importPlanFile.addEventListener('change', async () => {
+    importPlanBtn.addEventListener("click", () => importPlanFile.click());
+    importPlanFile.addEventListener("change", async () => {
       const file = importPlanFile.files && importPlanFile.files[0];
       if (!file) return;
       try {
@@ -441,18 +548,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         await importPlanFromObject(json);
       } catch (e) {
         console.error(e);
-        showMessage('Import failed: invalid JSON');
+        showMessage("Import failed: invalid JSON");
       } finally {
-        importPlanFile.value = '';
+        importPlanFile.value = "";
       }
     });
   }
 
   // Numbered icons for items in the plan
   function makeNumberedIcon(n, baseType) {
-    const color = baseType === 'food' ? 'var(--food)' : (baseType === 'ride' ? 'var(--ride)' : 'var(--misc)');
+    const color =
+      baseType === "food"
+        ? "var(--food)"
+        : baseType === "ride"
+        ? "var(--ride)"
+        : "var(--misc)";
     return L.divIcon({
-      className: 'marker marker-numbered',
+      className: "marker marker-numbered",
       html: `<div class="pin" style="background:${color};border-color:${color}"><span class="num">${n}</span></div>`,
       iconSize: [28, 28],
       iconAnchor: [14, 28],
@@ -476,7 +588,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Update all marker icons to reflect current tab: type icons on Markers tab, numbers on Plan tab
   function updateIconsForActiveTab() {
-    if (activeTab === 'plan') {
+    if (activeTab === "plan") {
       updateNumberedIcons();
     } else {
       markersState.forEach((s) => s.marker.setIcon(getIconForType(s.type)));
@@ -486,12 +598,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   function setMarkerPopup(m, state) {
     const { lat, lng } = m.getLatLng();
     const coords = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-    const safeLabel = String((state && state.label) || 'Marker');
-    const type = (state && state.type) || 'misc';
+    const safeLabel = String((state && state.label) || "Marker");
+    const type = (state && state.type) || "misc";
 
-    const options = TYPES
-      .map(t => `<option value="${t}" ${t === type ? 'selected' : ''}>${t}</option>`) 
-      .join('');
+    const options = TYPES.map(
+      (t) =>
+        `<option value="${t}" ${t === type ? "selected" : ""}>${t}</option>`
+    ).join("");
 
     const html = `
       <div class="popup-card">
@@ -515,26 +628,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
         <div class="popup-tip">Tip: drag to move, right-click to remove</div>
       </div>`;
-    m.bindPopup(html, { closeButton: true, className: 'modern-popup' });
+    m.bindPopup(html, { closeButton: true, className: "modern-popup" });
   }
 
   function addDraggableMarker(latlng, label, type, { openPopup = true } = {}) {
     const id = `m${idCounter++}`;
-    const t = type || 'misc';
-  const marker = L.marker(latlng, { draggable: !isMobileViewport(), autoPan: true, icon: getIconForType(t) }).addTo(markersLayer);
-    const state = { id, marker, label: label || `Marker ${idCounter - 1}`, type: t };
+    const t = type || "misc";
+    const marker = L.marker(latlng, {
+      draggable: !isMobileViewport(),
+      autoPan: true,
+      icon: getIconForType(t),
+    }).addTo(markersLayer);
+    const state = {
+      id,
+      marker,
+      label: label || `Marker ${idCounter - 1}`,
+      type: t,
+    };
     markersState.set(id, state);
     setMarkerPopup(marker, state);
 
     // Wire rename before opening so it works for the first open
-    marker.on('popupopen', (e) => {
+    marker.on("popupopen", (e) => {
       // wire rename button in the popup
       const popupEl = e.popup.getElement();
       if (!popupEl) return;
       const btn = popupEl.querySelector('button[data-action="rename"]');
       if (btn) {
-        btn.addEventListener('click', () => {
-          const newLabel = prompt('Marker label:', state.label || '');
+        btn.addEventListener("click", () => {
+          const newLabel = prompt("Marker label:", state.label || "");
           if (newLabel !== null) {
             state.label = newLabel.trim() || state.label;
             setMarkerPopup(marker, state);
@@ -547,8 +669,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const sel = popupEl.querySelector('select[name="marker-type"]');
       if (sel) {
-        sel.addEventListener('change', () => {
-          state.type = sel.value || 'misc';
+        sel.addEventListener("change", () => {
+          state.type = sel.value || "misc";
           // update icon based on type
           marker.setIcon(getIconForType(state.type));
           setMarkerPopup(marker, state);
@@ -559,41 +681,49 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
       }
 
-      const addBtn = popupEl.querySelector('.popup-add-to-plan');
+      const addBtn = popupEl.querySelector(".popup-add-to-plan");
       if (addBtn) {
-        addBtn.addEventListener('click', () => {
+        addBtn.addEventListener("click", () => {
           addToPlan(state.id);
         });
       }
     });
 
-  if (openPopup) marker.openPopup();
-  showMessage(`Added ${state.label} (${state.type}) at ${formatLatLng(marker.getLatLng())}`);
-  applyFilter();
-  renderList();
+    if (openPopup) marker.openPopup();
+    showMessage(
+      `Added ${state.label} (${state.type}) at ${formatLatLng(
+        marker.getLatLng()
+      )}`
+    );
+    applyFilter();
+    renderList();
 
-    marker.on('dragend', () => {
+    marker.on("dragend", () => {
       setMarkerPopup(marker, state);
       marker.openPopup();
-      showMessage(`${state.label} (${state.type}) moved to ${formatLatLng(marker.getLatLng())}`);
-  applyFilter();
-  renderList();
+      showMessage(
+        `${state.label} (${state.type}) moved to ${formatLatLng(
+          marker.getLatLng()
+        )}`
+      );
+      applyFilter();
+      renderList();
     });
 
-    marker.on('contextmenu', () => {
+    marker.on("contextmenu", () => {
       markersLayer.removeLayer(marker);
       // delete from state
       markersState.delete(id);
       showMessage(`${state.label} removed`);
-  applyFilter();
-  renderList();
+      applyFilter();
+      renderList();
     });
 
     return state;
   }
 
   // Click to place markers
-  map.on('click', (e) => {
+  map.on("click", (e) => {
     addDraggableMarker(e.latlng);
   });
 
@@ -601,55 +731,72 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (panelToggle && panelEl) {
     // Simplified toggle logic with debug logs
     const setExpanded = (expanded) => {
-      const isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+      const isMobile =
+        window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
       if (isMobile) {
-        panelEl.classList.toggle('collapsed', !expanded);
-        panelEl.classList.remove('collapsed-desktop');
+        panelEl.classList.toggle("collapsed", !expanded);
+        panelEl.classList.remove("collapsed-desktop");
       } else {
-        panelEl.classList.toggle('collapsed-desktop', !expanded);
-        panelEl.classList.remove('collapsed');
+        panelEl.classList.toggle("collapsed-desktop", !expanded);
+        panelEl.classList.remove("collapsed");
       }
-      panelToggle.setAttribute('aria-expanded', String(expanded));
-      panelToggle.textContent = expanded ? '▾' : '▴';
-      console.debug('[panelToggle] isMobile=%s expanded=%s classes=%o', isMobile, expanded, panelEl.className);
+      panelToggle.setAttribute("aria-expanded", String(expanded));
+      panelToggle.textContent = expanded ? "▾" : "▴";
+      console.debug(
+        "[panelToggle] isMobile=%s expanded=%s classes=%o",
+        isMobile,
+        expanded,
+        panelEl.className
+      );
     };
 
     // default expanded on desktop, collapsed on mobile
-    const initialExpanded = !(window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
+    const initialExpanded = !(
+      window.matchMedia && window.matchMedia("(max-width: 768px)").matches
+    );
     setExpanded(initialExpanded);
 
-    panelToggle.addEventListener('click', () => {
+    panelToggle.addEventListener("click", () => {
       // read current from attribute (truthy if 'true')
-      const current = panelToggle.getAttribute('aria-expanded') === 'true';
+      const current = panelToggle.getAttribute("aria-expanded") === "true";
       setExpanded(!current);
     });
   }
 
   // Controls wiring (existing buttons in header)
-  const locateBtn = document.getElementById('locateBtn');
-  const resetBtn = document.getElementById('resetBtn');
-  const saveBtn = document.getElementById('saveBtn');
-  const importBtn = document.getElementById('importBtn');
-  const importFile = document.getElementById('importFile');
+  const locateBtn = document.getElementById("locateBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const saveBtn = document.getElementById("saveBtn");
+  const importBtn = document.getElementById("importBtn");
+  const importFile = document.getElementById("importFile");
 
   if (locateBtn) {
-    locateBtn.addEventListener('click', () => {
-      map.locate({ setView: true, maxZoom: Math.min(16, TILE_OPTS.maxZoom || 16) });
+    locateBtn.addEventListener("click", () => {
+      map.locate({
+        setView: true,
+        maxZoom: Math.min(16, TILE_OPTS.maxZoom || 16),
+      });
     });
   }
   if (resetBtn) {
-    resetBtn.addEventListener('click', () => {
+    resetBtn.addEventListener("click", () => {
       map.setView(INITIAL_VIEW.center, INITIAL_VIEW.zoom);
     });
   }
 
   if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener("click", () => {
       // Build JSON array of markers
       const items = [];
       markersState.forEach((s) => {
         const { lat, lng } = s.marker.getLatLng();
-        items.push({ id: s.id, label: s.label || '', type: s.type || 'misc', lat, lng });
+        items.push({
+          id: s.id,
+          label: s.label || "",
+          type: s.type || "misc",
+          lat,
+          lng,
+        });
       });
       const payload = {
         createdAt: new Date().toISOString(),
@@ -657,11 +804,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         markers: items,
       };
 
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = 'markers.json';
+      a.download = "markers.json";
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -670,20 +819,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-
   function clearAllMarkers() {
     markersLayer.clearLayers();
     markersState.clear();
   }
 
   function validateImported(data) {
-    if (!data || typeof data !== 'object') return 'Invalid JSON';
-    if (!Array.isArray(data.markers)) return 'Missing markers array';
+    if (!data || typeof data !== "object") return "Invalid JSON";
+    if (!Array.isArray(data.markers)) return "Missing markers array";
     for (const m of data.markers) {
-      if (typeof m !== 'object') return 'Invalid marker item';
-      if (typeof m.lat !== 'number' || typeof m.lng !== 'number') return 'Marker missing numeric lat/lng';
-      if (m.label != null && typeof m.label !== 'string') return 'Marker label must be a string';
-      if (m.type != null && typeof m.type !== 'string') return 'Marker type must be a string';
+      if (typeof m !== "object") return "Invalid marker item";
+      if (typeof m.lat !== "number" || typeof m.lng !== "number")
+        return "Marker missing numeric lat/lng";
+      if (m.label != null && typeof m.label !== "string")
+        return "Marker label must be a string";
+      if (m.type != null && typeof m.type !== "string")
+        return "Marker type must be a string";
     }
     return null;
   }
@@ -695,27 +846,33 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
     if (clear) clearAllMarkers();
-  let added = 0;
-  // reset plan when importing fresh markers
-  planOrder.splice(0, planOrder.length);
+    let added = 0;
+    // reset plan when importing fresh markers
+    planOrder.splice(0, planOrder.length);
     for (const m of data.markers) {
       try {
-        const type = (m.type && TYPES.includes(m.type)) ? m.type : (m.type || 'misc');
+        const type =
+          m.type && TYPES.includes(m.type) ? m.type : m.type || "misc";
         // don't open popups when bulk importing
-        addDraggableMarker({ lat: m.lat, lng: m.lng }, m.label || undefined, type, { openPopup: false });
+        addDraggableMarker(
+          { lat: m.lat, lng: m.lng },
+          m.label || undefined,
+          type,
+          { openPopup: false }
+        );
         added++;
       } catch (_) {
         // skip invalid
       }
     }
     showMessage(`Imported ${added} marker(s)`);
-  updateIconsForActiveTab();
-  renderList();
+    updateIconsForActiveTab();
+    renderList();
   }
 
   if (importBtn && importFile) {
-    importBtn.addEventListener('click', () => importFile.click());
-    importFile.addEventListener('change', async () => {
+    importBtn.addEventListener("click", () => importFile.click());
+    importFile.addEventListener("change", async () => {
       const file = importFile.files && importFile.files[0];
       if (!file) return;
       try {
@@ -724,51 +881,57 @@ document.addEventListener('DOMContentLoaded', async () => {
         importMarkersFromObject(json, { clear: true });
       } catch (e) {
         console.error(e);
-        showMessage('Import failed: invalid JSON');
+        showMessage("Import failed: invalid JSON");
       } finally {
-        importFile.value = '';
+        importFile.value = "";
       }
     });
   }
 
-  map.on('locationfound', (e) => {
+  map.on("locationfound", (e) => {
     const radius = e.accuracy || 50;
     L.circle(e.latlng, { radius }).addTo(map);
     showMessage(`Location found (±${Math.round(radius)}m)`);
   });
 
-  map.on('locationerror', () => showMessage('Could not get location'));
+  map.on("locationerror", () => showMessage("Could not get location"));
 
-  showMessage('Tip: Click anywhere to add a draggable marker. Right-click a marker to remove.');
+  showMessage(
+    "Tip: Click anywhere to add a draggable marker. Right-click a marker to remove."
+  );
 
   // Load default markers from markers_new.json on startup (fallback to markers.json)
   async function loadDefaultMarkers() {
     try {
-      const resp = await fetch('./markers_new.json', { cache: 'no-store' });
-      if (!resp.ok) throw new Error('markers_new.json not found');
+      const resp = await fetch("./markers_new.json", { cache: "no-store" });
+      if (!resp.ok) throw new Error("markers_new.json not found");
       const json = await resp.json();
       importMarkersFromObject(json, { clear: true });
-      const count = Array.isArray(json.markers) ? json.markers.length : 'unknown';
+      const count = Array.isArray(json.markers)
+        ? json.markers.length
+        : "unknown";
       showMessage(`Loaded ${count} marker(s) from markers_new.json`);
       return;
     } catch (e) {
-      console.warn('markers_new.json not loaded:', e);
+      console.warn("markers_new.json not loaded:", e);
     }
 
     // fallback to markers.json if present
     try {
-      const resp2 = await fetch('./markers.json', { cache: 'no-store' });
-      if (!resp2.ok) throw new Error('markers.json not found');
+      const resp2 = await fetch("./markers.json", { cache: "no-store" });
+      if (!resp2.ok) throw new Error("markers.json not found");
       const json2 = await resp2.json();
       importMarkersFromObject(json2, { clear: true });
-      const count2 = Array.isArray(json2.markers) ? json2.markers.length : 'unknown';
+      const count2 = Array.isArray(json2.markers)
+        ? json2.markers.length
+        : "unknown";
       showMessage(`Loaded ${count2} marker(s) from markers.json`);
       return;
     } catch (e) {
-      console.warn('markers.json not loaded:', e);
+      console.warn("markers.json not loaded:", e);
     }
 
-    showMessage('No default marker file (markers_new.json) found.');
+    showMessage("No default marker file (markers_new.json) found.");
   }
 
   await loadDefaultMarkers();
@@ -781,16 +944,38 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Try to load a default trip plan from /trip-plan.json
   async function loadDefaultPlan() {
+    // First try loading a locally saved plan from IndexedDB (static-only option)
     try {
-      const resp = await fetch('./trip-plan.json', { cache: 'no-store' });
-      if (!resp.ok) throw new Error('trip-plan.json not found');
+      const db = await openDB("park-map", 1, {
+        upgrade(db) {
+          if (!db.objectStoreNames.contains("plans"))
+            db.createObjectStore("plans");
+        },
+      });
+      const local = await db.get("plans", "current-plan");
+      if (
+        local &&
+        typeof local === "object" &&
+        Array.isArray(local.plan) &&
+        local.plan.length
+      ) {
+        await importPlanFromObject(local);
+        showMessage(`Loaded trip plan (local) (${local.plan.length} item(s))`);
+        return;
+      }
+    } catch (e) {
+      console.warn("Could not read local plan from IndexedDB", e);
+    }
+    try {
+      const resp = await fetch("./trip-plan.json", { cache: "no-store" });
+      if (!resp.ok) throw new Error("trip-plan.json not found");
       const json = await resp.json();
       await importPlanFromObject(json);
-      const count = Array.isArray(json.plan) ? json.plan.length : 'unknown';
+      const count = Array.isArray(json.plan) ? json.plan.length : "unknown";
       showMessage(`Loaded trip plan (${count} item(s))`);
     } catch (e) {
       // optional; silently ignore if not present
-      console.warn('trip-plan.json not loaded:', e);
+      console.warn("trip-plan.json not loaded:", e);
     }
   }
 
